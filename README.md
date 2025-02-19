@@ -7,4 +7,4 @@ Torch tensor might be a better option?
 
 ## Libraries
 - `cuda`
-- `libyaml`
+- `yaml-cpp`

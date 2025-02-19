@@ -5,8 +5,18 @@
 # unzip libtorch-cxx11-abi-shared-with-deps-2.5.1+cu118.zip
 # rm libtorch-cxx11-abi-shared-with-deps-2.5.1+cu118.zip
 # git clone https://github.com/NVIDIA/NVTX.git
-spack install libyaml cuda
-spack load libyaml cuda
+
+# # Install yaml-cpp
+# wget https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz
+# tar -xvf 0.8.0.tar.gz
+# spack install cuda
+# spack load cuda
+# rm 0.8.0.tar.gz 
+# mkdir yaml-cpp-0.8.0/build
+# cd yaml-cpp-0.8.0/build
+# cmake -DCMAKE_BUILD_TYPE=Release ..
+# make -j 16
+
 export CUDACXX=$(which nvcc)
 # export CUDA_DIR=
 # export Torch_DIR=/home/jeffery/grad/cpp/libtorch/share/cmake/Torch
