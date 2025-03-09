@@ -20,7 +20,7 @@ SET(CMAKE_CACHEFILE_DIR ${dir})
 # Set the CUDA compiler
 # set(CMAKE_CUDA_COMPILER /home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw/bin/nvcc)
 
-project(envtest LANGUAGES CXX CUDA)
+project(env_test LANGUAGES CXX CUDA)
 set(CMAKE_CUDA_ARCHITECTURES 75 89)
 
 # Find Eigen
@@ -34,18 +34,26 @@ include_directories(${CUDAToolkit_INCLUDE_DIRS})
 # find_package(nvtx3 REQUIRED)
 # include_directories(${nvtx3_INCLUDE_DIRS})
 
+# Find Torch
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
 
+# Find yaml-cpp
+find_package(yaml-cpp REQUIRED)
+include_directories(${YAML_CPP_INCLUDE_DIR})
+
 # Add executable
-add_executable(envtest src/envtest.cpp)
+add_executable(env_test src/tests/env_test.cpp)
+add_executable(config_test src/tests/config_test.cpp)
+
 
 # Link libraries
 # target_link_libraries(envtest PUBLIC CUDA::cublas)
-target_link_libraries(envtest PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
+target_link_libraries(env_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
+target_link_libraries(config_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     message("OpenMP found")
-    target_link_libraries(envtest PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(env_test PUBLIC OpenMP::OpenMP_CXX)
 endif()
-

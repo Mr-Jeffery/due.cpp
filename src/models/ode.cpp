@@ -23,6 +23,26 @@ struct MyNetImpl : torch::nn::Module {
 TORCH_MODULE(MyNet);
 
 class ODE {
+private:
+    torch::Tensor trainX, trainY, validX, validY;
+    MyNet net;
+    int64_t multi_steps;
+    int64_t memory_steps;
+    int64_t nepochs;
+    int64_t bsize;
+    double learning_rate;
+    bool doValidation;
+    float validRatio;
+    bool verboseN;
+    torch::Device device_;
+    std::unique_ptr<torch::optim::Optimizer> optimizer;
+    std::unique_ptr<torch::data::StatelessDataLoader<
+        torch::data::datasets::TensorDataset,
+        torch::data::samplers::RandomSampler>> trainLoader;
+    std::unique_ptr<torch::data::StatelessDataLoader<
+        torch::data::datasets::TensorDataset,
+        torch::data::samplers::SequentialSampler>> validLoader;
+
 public:
     ODE(const torch::Tensor& trainX_,
         const torch::Tensor& trainY_,
@@ -65,15 +85,14 @@ public:
             trainY = trainY.slice(0, 0, trainY.size(0) - splitSize).clone();
         }
         auto datasetTrain = torch::data::datasets::TensorDataset(trainX, trainY).map(torch::data::transforms::Stack<>());
-        auto trainLoader = std::make_unique<torch::data::StatelessDataLoader<decltype(datasetTrain)>>(
-            datasetTrain, bsize);
+        auto trainLoader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
+            std::move(datasetTrain), bsize);
 
-        if (doValidation && validRatio > 0.f) {
-            auto datasetValid = torch::data::datasets::TensorDataset(validX, validY).map(torch::data::transforms::Stack<>());
-            auto validLoader = std::make_unique<torch::data::StatelessDataLoader<decltype(datasetValid)>>(
-                datasetValid, bsize);
+        auto datasetValid = torch::data::datasets::TensorDataset().map(torch::data::transforms::Stack<>());
+        auto datasetValid = torch::data::datasets::TensorDataset(validX, validY).map(torch::data::transforms::Stack<>());
+            // std::move(datasetValid, bsize);
         }
-    }
+    };
 
     void train() {
         summary();
@@ -179,23 +198,5 @@ public:
         return total;
     }
 
-private:
-    torch::Tensor trainX, trainY, validX, validY;
-    MyNet net;
-    int64_t multi_steps;
-    int64_t memory_steps;
-    int64_t nepochs;
-    int64_t bsize;
-    double learning_rate;
-    bool doValidation;
-    float validRatio;
-    bool verboseN;
-    torch::Device device_;
-    std::unique_ptr<torch::optim::Optimizer> optimizer;
-    std::unique_ptr<torch::data::StatelessDataLoader<
-        torch::data::datasets::TensorDataset,
-        torch::data::samplers::RandomSampler>> trainLoader;
-    std::unique_ptr<torch::data::StatelessDataLoader<
-        torch::data::datasets::TensorDataset,
-        torch::data::samplers::SequentialSampler>> validLoader;
+
 };

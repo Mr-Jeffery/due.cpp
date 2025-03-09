@@ -8,3 +8,8 @@ Torch tensor might be a better option?
 ## Libraries
 - `cuda`
 - `yaml-cpp`
+
+## Fake Tensor
+$$
+(N orbits),(d variables),(t timesteps)
+$$

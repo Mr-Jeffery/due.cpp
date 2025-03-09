@@ -22,14 +22,14 @@ export CUDACXX=$(which nvcc)
 # export Torch_DIR=/home/jeffery/grad/cpp/libtorch/share/cmake/Torch
 # export PATH=/home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw/bin:$PATH
 # export LD_LIBRARY_PATH=/home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw/lib64:/home/jeffery/grad/cpp/third_party/libtorch/lib:$LD_LIBRARY_PATH
-export PROJECT_DIR=/home/jeffery/grad/cpp
-mkdir build
-cd build
+export PROJECT_DIR=/home/jeffery/grad/due.cpp
+
 cmake -DCMAKE_BUILD_TYPE=Release\
     -DCAFFE2_USE_CUDNN=1\
     -DPYTHON_EXECUTABLE=$(which python)\
     -DCUDAToolkit_ROOT=/home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw\
-    -DTorch_DIR=$PROJECT_DIR/third_party/libtorch/share/cmake/Torch .. 
+    -DTorch_DIR=$PROJECT_DIR/third_party/libtorch/share/cmake/Torch . 
 make -j 16
-./envtest
+./build/env_test
+./build/config_test
     # -Dnvtx2_DIR=$PROJECT_DIR/third_party/NVTX/c\
