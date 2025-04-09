@@ -34,21 +34,21 @@
 //     return torch::mean(diff / base);
 // }
 
-torch::nn::AnyModule get_activation(const std::string& name) {
+std::function<torch::Tensor(torch::Tensor)> get_activation(const std::string& name) {
     if (name == "tanh" || name == "Tanh")
-        return torch::nn::AnyModule(torch::nn::Tanh());
+        return torch::nn::Tanh();
     else if (name == "relu" || name == "ReLU")
-        return torch::nn::AnyModule(torch::nn::ReLU());
+        return torch::nn::ReLU();
     else if (name == "leaky_relu" || name == "LeakyReLU")
-        return torch::nn::AnyModule(torch::nn::LeakyReLU());
+        return torch::nn::LeakyReLU();
     else if (name == "sigmoid" || name == "Sigmoid")
-        return torch::nn::AnyModule(torch::nn::Sigmoid());
+        return torch::nn::Sigmoid();
     else if (name == "softplus" || name == "Softplus")
-        return torch::nn::AnyModule(torch::nn::Softplus());
+        return torch::nn::Softplus();
     else if (name == "gelu" || name == "Gelu")
         // gelu in C++ is available via functional::gelu or a custom module
         // For example:
-        return torch::nn::AnyModule(torch::nn::Functional(torch::nn::functional::gelu));
+        return torch::nn::Functional(torch::nn::functional::gelu);
     else
         throw std::runtime_error("unknown or unsupported activation function: " + name);
 }

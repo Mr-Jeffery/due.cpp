@@ -8,34 +8,54 @@
 #include <map>
 #include <algorithm>
 #include <random>
+
+#include "../utils/config.hpp"
 // #include <matio.h> // For loading .mat files
 
 class ODEDataset {
 public:
-    ODEDataset(const std::map<std::string, torch::IValue>& config)
-        : problem_dim_(config.at("problem_dim").toInt()), memory_steps_(config.at("memory").toInt()),
-          multi_steps_(config.at("multi_steps").toInt()), nbursts_(config.at("nbursts").toInt()),
-          dtype_(config.at("dtype").toStringRef()) {
-        assert(memory_steps_ >= 0);
+    int problem_dim;
+    int memory_steps;
+    int multi_steps;
+    int nbursts;
+    std::string dtype;
+    torch::Tensor vmin, vmax;
+
+    ODEDataset(const ConfigData& config)
+        : problem_dim(config.problem_dim),
+          memory_steps(config.memory),
+          multi_steps(config.multi_steps),
+          nbursts(config.nbursts),
+          dtype(config.dtype)
+    {
+        assert(problem_dim > 0);
+        assert(memory_steps >= 0);
     }
 
     std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> load(const std::string& file_path_train, const std::string& file_path_test = "") {
+        int N = 1000;
+        int d = this->problem_dim;
+        int T = 1001;
+        // auto target = torch::zeros({N*this->nbursts, d, this->memory_steps + this->multi_steps + 2});
+        // for (int i = 0; i < N; i++) {
+        //     auto inits = torch::randint(0, T-this->memory_steps-this->multi_steps-1, {this->nbursts}); // (0, K-subset+1, J0)
+
+        // }
         
+        torch::set_default_dtype(torch::scalarTypeToTypeMeta(torch::kFloat64));
+        auto trainX = torch::randn({10000, 2});
+        auto trainY = torch::randn({10000, 2, 11});
+
+        return std::make_tuple(trainX, trainY, torch::zeros({1,2,1}), torch::ones({1,2,1}));
     }
 
 private:
     torch::Tensor normalize(torch::Tensor data) {
-        vmax_ = std::get<0>(torch::max(data, 0, true));
-        vmin_ = std::get<0>(torch::min(data, 0, true));
-        auto target = 2 * (data - 0.5 * (vmax_ + vmin_)) / (vmax_ - vmin_);
+        vmax = std::get<0>(torch::max(data, 0, true));
+        vmin = std::get<0>(torch::min(data, 0, true));
+        auto target = 2 * (data - 0.5 * (vmax + vmin)) / (vmax - vmin);
         return torch::clamp(target, -1, 1);
     }
 
 
-    int64_t problem_dim_;
-    int64_t memory_steps_;
-    int64_t multi_steps_;
-    int64_t nbursts_;
-    std::string dtype_;
-    torch::Tensor vmin_, vmax_;
 };

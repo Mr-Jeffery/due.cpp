@@ -9,9 +9,9 @@
 
 struct ConfigData {
     std::string problem_type;
-    int nbursts;
-    int memory;
-    int multi_steps;
+    uint nbursts;
+    uint memory;
+    uint multi_steps;
     uint problem_dim;
 
     uint seed;
@@ -19,11 +19,12 @@ struct ConfigData {
 };
 
 struct ConfigNet {
-    int depth;
-    int width;
+    uint depth;
+    uint width;
     std::string activation;
 
     uint problem_dim;
+    uint memory;
 
     std::string device;
 
@@ -34,8 +35,8 @@ struct ConfigNet {
 struct ConfigTrain {
     std::string device;
     int valid;
-    int epochs;
-    int batch_size;
+    uint epochs;
+    uint batch_size;
     std::string optimizer;
     std::string scheduler;
     double learning_rate;
@@ -54,9 +55,9 @@ std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& co
 
     ConfigData confData;
     confData.problem_type = config["data"]["problem_type"].as<std::string>();
-    confData.nbursts      = config["data"]["nbursts"].as<int>();
-    confData.memory       = config["data"]["memory"].as<int>();
-    confData.multi_steps  = config["data"]["multi_steps"].as<int>();
+    confData.nbursts      = config["data"]["nbursts"].as<uint>();
+    confData.memory       = config["data"]["memory"].as<uint>(0); // Default value
+    confData.multi_steps  = config["data"]["multi_steps"].as<uint>();
     confData.problem_dim  = config["data"]["problem_dim"].as<uint>();
 
     confData.seed         = config["seed"].as<int>();
@@ -69,6 +70,7 @@ std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& co
     confNet.device     = config["training"]["device"].as<std::string>();
 
     confNet.problem_dim  = confData.problem_dim;
+    confNet.memory       = confData.memory;
     confNet.seed       = confData.seed;
     confNet.dtype      = confData.dtype;
 

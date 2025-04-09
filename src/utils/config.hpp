@@ -8,9 +8,9 @@
 
 struct ConfigData {
     std::string problem_type;
-    int nbursts;
-    int memory;
-    int multi_steps;
+    uint nbursts;
+    uint memory;
+    uint multi_steps;
     uint problem_dim;
 
     uint seed;
@@ -18,11 +18,12 @@ struct ConfigData {
 };
 
 struct ConfigNet {
-    int depth;
-    int width;
+    uint depth;
+    uint width;
     std::string activation;
 
     uint problem_dim;
+    uint memory;
 
     std::string device;
 
@@ -33,8 +34,8 @@ struct ConfigNet {
 struct ConfigTrain {
     std::string device;
     int valid;
-    int epochs;
-    int batch_size;
+    uint epochs;
+    uint batch_size;
     std::string optimizer;
     std::string scheduler;
     double learning_rate;

@@ -7,7 +7,7 @@
 #include <memory>
 #include <functional>
 
-torch::nn::AnyModule get_activation(const std::string& name);
+std::function<torch::Tensor(torch::Tensor)> get_activation(const std::string& name);
 
 std::unique_ptr<torch::optim::Optimizer> get_optimizer(
     const std::string& name,

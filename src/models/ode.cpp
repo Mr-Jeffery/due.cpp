@@ -4,6 +4,25 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include "../utils/utils.hpp"
+#include "../datasets/ode_parody.hpp"
+
+class sampleDataLoader : public torch::data::Dataset<sampleDataLoader> {
+public:
+    sampleDataLoader(const torch::Tensor& data_, const torch::Tensor& target_)
+      : data(data), target(target) {}
+
+    torch::data::Example<> get(size_t index) override {
+        return {data[index], target[index]};
+    }
+
+    torch::optional<size_t> size() const override {
+        return data.size(0);
+    }
+private:
+    torch::Tensor data;
+    torch::Tensor target;
+};
 
 // Placeholder network module
 struct MyNetImpl : torch::nn::Module {
@@ -30,68 +49,65 @@ private:
     int64_t memory_steps;
     int64_t nepochs;
     int64_t bsize;
-    double learning_rate;
-    bool doValidation;
-    float validRatio;
-    bool verboseN;
-    torch::Device device_;
+    double lr;
+    bool do_validation;
+    float valid;
+    bool verbose;
+    torch::Device device;
     std::unique_ptr<torch::optim::Optimizer> optimizer;
     std::unique_ptr<torch::data::StatelessDataLoader<
         torch::data::datasets::TensorDataset,
-        torch::data::samplers::RandomSampler>> trainLoader;
+        torch::data::samplers::RandomSampler>> train_loader;
     std::unique_ptr<torch::data::StatelessDataLoader<
         torch::data::datasets::TensorDataset,
-        torch::data::samplers::SequentialSampler>> validLoader;
+        torch::data::samplers::SequentialSampler>> valid_loader;
 
 public:
     ODE(const torch::Tensor& trainX_,
         const torch::Tensor& trainY_,
         MyNet& network,
-        int64_t epochs,
-        int64_t batch_size,
-        double lr,
-        bool do_validation,
-        float valid_ratio,
-        bool verbose,
-        torch::DeviceType device,
-        unsigned seed)
+        ConfigTrain& config
+    )
       : trainX(trainX_.clone()),
         trainY(trainY_.clone()),
         net(network),
-        nepochs(epochs),
-        bsize(batch_size),
-        learning_rate(lr),
-        doValidation(do_validation),
-        validRatio(valid_ratio),
-        verboseN(verbose),
-        device_(torch::Device(device)) 
+        nepochs(config.epochs),
+        bsize(config.batch_size),
+        lr(config.learning_rate),
+        do_validation(config.valid > 0),
+        valid(config.valid > 0 ? config.valid : 0.f),
+        verbose(config.verbose),
+        device(config.device)
     {
-        set_seed(seed);
-        trainX = trainX.to(device_);
-        trainY = trainY.to(device_);
+
+
+        set_seed(config.seed);
+        trainX = trainX.to(device);
+        trainY = trainY.to(device);
         multi_steps = trainY.size(-1);
         memory_steps = (trainX.size(1) > trainY.size(1))
             ? trainX.size(1) / trainY.size(1)
             : 1;
 
-        net->to(device_);
+        net->to(device);
 
         optimizer = std::make_unique<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(lr));
-        if (doValidation && validRatio > 0.f) {
-            auto splitSize = static_cast<int64_t>(validRatio * trainX.size(0));
-            validX = trainX.slice(0, trainX.size(0) - splitSize, trainX.size(0)).clone();
-            validY = trainY.slice(0, trainY.size(0) - splitSize, trainY.size(0)).clone();
-            trainX = trainX.slice(0, 0, trainX.size(0) - splitSize).clone();
-            trainY = trainY.slice(0, 0, trainY.size(0) - splitSize).clone();
-        }
-        auto datasetTrain = torch::data::datasets::TensorDataset(trainX, trainY).map(torch::data::transforms::Stack<>());
-        auto trainLoader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
-            std::move(datasetTrain), bsize);
+        if (do_validation) {
+            int64_t split_size = static_cast<int64_t>(valid * trainX.size(0));
+            validX = trainX.slice(0, trainX.size(0) - split_size, trainX.size(0)).clone();
+            validY = trainY.slice(0, trainY.size(0) - split_size, trainY.size(0)).clone();
+            trainX = trainX.slice(0, 0, trainX.size(0) - split_size).clone();
+            trainY = trainY.slice(0, 0, trainY.size(0) - split_size).clone();
 
-        auto datasetValid = torch::data::datasets::TensorDataset().map(torch::data::transforms::Stack<>());
-        auto datasetValid = torch::data::datasets::TensorDataset(validX, validY).map(torch::data::transforms::Stack<>());
-            // std::move(datasetValid, bsize);
+            auto valid_loader = std::make_unique<torch::data::StatelessDataLoader<
+                sampleDataLoader,
+                torch::data::samplers::SequentialSampler>>(
+                sampleDataLoader(validX, validY), bsize);
         }
+        auto train_loader = std::make_unique<torch::data::StatelessDataLoader<
+            sampleDataLoader,
+            torch::data::samplers::RandomSampler>>(
+            sampleDataLoader(trainX, trainY), bsize);
     };
 
     void train() {
@@ -105,9 +121,9 @@ public:
             double trainLoss = 0.0;
             int64_t batchCount = 0;
 
-            for (auto& batch : *trainLoader) {
-                auto xx = batch.data.to(device_);
-                auto yy = batch.target.to(device_);
+            for (auto& batch : *train_loader) {
+                auto xx = batch[0].data.to(device);
+                auto yy = batch[1].data.to(device);
 
                 optimizer->zero_grad();
                 auto pred = torch::zeros_like(yy);
@@ -124,13 +140,13 @@ public:
             }
             trainLoss /= static_cast<double>(batchCount);
 
-            if (doValidation && validRatio > 0.f) {
+            if (do_validation) {
                 double validLoss = validate();
                 if (validLoss < minLoss) {
                     minLoss = validLoss;
                     // Save model here if needed
                 }
-                if (verboseN && (ep + 1) % 10 == 0) {
+                if (verbose && (ep + 1) % 10 == 0) {
                     auto end = std::chrono::steady_clock::now();
                     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
                     std::cout << "Epoch " << ep+1 << " --- Time: " << elapsed
@@ -142,7 +158,7 @@ public:
                 if (trainLoss < minLoss) {
                     minLoss = trainLoss;
                 }
-                if (verboseN && (ep + 1) % 10 == 0) {
+                if (verbose && (ep + 1) % 10 == 0) {
                     auto end = std::chrono::steady_clock::now();
                     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
                     std::cout << "Epoch " << ep+1 << " --- Time: " << elapsed
@@ -158,9 +174,9 @@ public:
         torch::NoGradGuard no_grad;
         double totalLoss = 0.0;
         int64_t count = 0;
-        for (auto& batch : *validLoader) {
-            auto xx = batch.data.to(device_);
-            auto yy = batch.target.to(device_);
+        for (auto& batch : *valid_loader) {
+            auto xx = batch[0].data.to(device);
+            auto yy = batch[1].data.to(device);
 
             auto pred = torch::zeros_like(yy);
             for (int64_t t = 0; t < multi_steps; ++t) {
