@@ -6,10 +6,11 @@
 #include <chrono>
 #include "../utils/utils.hpp"
 #include "../datasets/ode_parody.hpp"
+#include "../networks/fcn.hpp"
 
 class sampleDataLoader : public torch::data::Dataset<sampleDataLoader> {
 public:
-    sampleDataLoader(const torch::Tensor& data_, const torch::Tensor& target_)
+    sampleDataLoader(at::Tensor *data_, at::Tensor *target_)
       : data(data), target(target) {}
 
     torch::data::Example<> get(size_t index) override {
@@ -17,34 +18,34 @@ public:
     }
 
     torch::optional<size_t> size() const override {
-        return data.size(0);
+        return data->size(0);
     }
 private:
-    torch::Tensor data;
-    torch::Tensor target;
+    at::Tensor *data;
+    at::Tensor *target;
 };
 
-// Placeholder network module
-struct MyNetImpl : torch::nn::Module {
-    int64_t output_dim;
-    MyNetImpl(int64_t input_dim, int64_t hidden_dim, int64_t output_dim_)
-      : fc1(register_module("fc1", torch::nn::Linear(input_dim, hidden_dim))),
-        fc2(register_module("fc2", torch::nn::Linear(hidden_dim, output_dim_))),
-        output_dim(output_dim_) {}
+// // Placeholder network module
+// struct MyNetImpl : torch::nn::Module {
+//     int64_t output_dim;
+//     MyNetImpl(int64_t input_dim, int64_t hidden_dim, int64_t output_dim_)
+//       : fc1(register_module("fc1", torch::nn::Linear(input_dim, hidden_dim))),
+//         fc2(register_module("fc2", torch::nn::Linear(hidden_dim, output_dim_))),
+//         output_dim(output_dim_) {}
 
-    torch::Tensor forward(const torch::Tensor& x) {
-        auto out = torch::relu(fc1->forward(x));
-        return fc2->forward(out);
-    }
+//     torch::Tensor forward(const torch::Tensor& x) {
+//         auto out = torch::relu(fc1->forward(x));
+//         return fc2->forward(out);
+//     }
 
-    torch::nn::Linear fc1, fc2;
-};
-TORCH_MODULE(MyNet);
+//     torch::nn::Linear fc1, fc2;
+// };
+// TORCH_MODULE(MyNet);
 
 class ODE {
 private:
-    torch::Tensor trainX, trainY, validX, validY;
-    MyNet net;
+    at::Tensor *trainX, *trainY, *validX, *validY;
+    Affine *net;
     int64_t multi_steps;
     int64_t memory_steps;
     int64_t nepochs;
@@ -63,14 +64,14 @@ private:
         torch::data::samplers::SequentialSampler>> valid_loader;
 
 public:
-    ODE(const torch::Tensor& trainX_,
-        const torch::Tensor& trainY_,
-        MyNet& network,
-        ConfigTrain& config
+    ODE(at::Tensor *trainX_,
+        at::Tensor *trainY_,
+        Affine *net_,
+        ConfigTrain config
     )
-      : trainX(trainX_.clone()),
-        trainY(trainY_.clone()),
-        net(network),
+      : trainX(trainX_),
+        trainY(trainY_),
+        net(net_),
         nepochs(config.epochs),
         bsize(config.batch_size),
         lr(config.learning_rate),
@@ -82,32 +83,36 @@ public:
 
 
         set_seed(config.seed);
-        trainX = trainX.to(device);
-        trainY = trainY.to(device);
-        multi_steps = trainY.size(-1);
-        memory_steps = (trainX.size(1) > trainY.size(1))
-            ? trainX.size(1) / trainY.size(1)
+        *trainX = trainX->to(device);
+        *trainY = trainY->to(device);
+        multi_steps = trainY->size(-1);
+        memory_steps = (trainX->size(1) > trainY->size(1))
+            ? trainX->size(1) / trainY->size(1)
             : 1;
 
         net->to(device);
 
         optimizer = std::make_unique<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(lr));
         if (do_validation) {
-            int64_t split_size = static_cast<int64_t>(valid * trainX.size(0));
-            validX = trainX.slice(0, trainX.size(0) - split_size, trainX.size(0)).clone();
-            validY = trainY.slice(0, trainY.size(0) - split_size, trainY.size(0)).clone();
-            trainX = trainX.slice(0, 0, trainX.size(0) - split_size).clone();
-            trainY = trainY.slice(0, 0, trainY.size(0) - split_size).clone();
+            int64_t split_size = static_cast<int64_t>(valid * trainX->size(0));
+            *validX = trainX->slice(0, trainX->size(0) - split_size, trainX->size(0));
+            *validY = trainY->slice(0, trainY->size(0) - split_size, trainY->size(0));
+            *trainX = trainX->slice(0, 0, trainX->size(0) - split_size);
+            *trainY = trainY->slice(0, 0, trainY->size(0) - split_size);
 
             auto valid_loader = std::make_unique<torch::data::StatelessDataLoader<
                 sampleDataLoader,
                 torch::data::samplers::SequentialSampler>>(
-                sampleDataLoader(validX, validY), bsize);
+                sampleDataLoader(validX, validY),
+                torch::data::samplers::SequentialSampler(validX->size(0)),
+                torch::data::DataLoaderOptions().batch_size(bsize));
         }
         auto train_loader = std::make_unique<torch::data::StatelessDataLoader<
             sampleDataLoader,
             torch::data::samplers::RandomSampler>>(
-            sampleDataLoader(trainX, trainY), bsize);
+            sampleDataLoader(trainX, trainY),
+            torch::data::samplers::RandomSampler(trainX->size(0)),
+            torch::data::DataLoaderOptions().batch_size(bsize));
     };
 
     void train() {

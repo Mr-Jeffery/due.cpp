@@ -8,14 +8,14 @@
 #include "../utils/trainer.hpp"
 #include "nn.hpp"
 
-class AffineImpl : public NN {
+class Affine : public NN {
 public:
     torch::Tensor vmin, vmax;
     std::string dtype;
     int memory, output_dim, input_dim;
     torch::nn::Linear mDMD{nullptr};
 
-    AffineImpl(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config) {
+    Affine(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config) {
         this->vmin = vmin;
         this->vmax = vmax;
         this->dtype = config.dtype;
@@ -67,16 +67,15 @@ public:
     }
 
 };
-TORCH_MODULE(Affine);
 
-class MLPImpl : public torch::nn::Module {
+class MLP : public torch::nn::Module {
 public:
     std::string dtype;
     int output_dim, memory, input_dim, depth, width;
     torch::nn::ModuleList layers;
     std::function<torch::Tensor(torch::Tensor)> activation;
 
-    MLPImpl(const ConfigNet& config) {
+    MLP(const ConfigNet& config) {
         this->dtype = config.dtype;
         this->output_dim = config.problem_dim;
         this->memory = config.memory;
@@ -129,22 +128,20 @@ private:
         torch::manual_seed(seed);
     }
 };
-TORCH_MODULE(MLP);
 
-class ResNetImpl : public AffineImpl {
+class ResNet : public Affine {
 public:
     MLP mlp;
 
-    ResNetImpl(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config)
-        : AffineImpl(vmin, vmax, config), mlp(config) {
-        register_module("mlp", mlp);
+    ResNet(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config)
+        : Affine(vmin, vmax, config), mlp(config) {
+        
     }
 
     torch::Tensor forward(torch::Tensor x) {
-        return mlp->forward(x) + x.index({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(-this->output_dim)});
+        return mlp.forward(x) + x.index({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(-this->output_dim)});
     }
 };
-TORCH_MODULE(ResNet);
 
 // class GResNetImpl : public AffineImpl {
 // public:

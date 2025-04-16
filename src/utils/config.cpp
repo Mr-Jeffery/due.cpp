@@ -1,4 +1,4 @@
-// #include "config.hpp"
+#include "config.hpp"
 #include <string>
 #include <tuple>
 #include <fstream>
@@ -7,48 +7,48 @@
 #include <yaml-cpp/yaml.h>
 
 
-struct ConfigData {
-    std::string problem_type;
-    uint nbursts;
-    uint memory;
-    uint multi_steps;
-    uint problem_dim;
+// struct ConfigData {
+//     std::string problem_type;
+//     uint nbursts;
+//     uint memory;
+//     uint multi_steps;
+//     uint problem_dim;
 
-    uint seed;
-    std::string dtype;
-};
+//     uint seed;
+//     std::string dtype;
+// };
 
-struct ConfigNet {
-    uint depth;
-    uint width;
-    std::string activation;
+// struct ConfigNet {
+//     uint depth;
+//     uint width;
+//     std::string activation;
 
-    uint problem_dim;
-    uint memory;
+//     uint problem_dim;
+//     uint memory;
 
-    std::string device;
+//     std::string device;
 
-    uint seed;
-    std::string dtype;
-};
+//     uint seed;
+//     std::string dtype;
+// };
 
-struct ConfigTrain {
-    std::string device;
-    int valid;
-    uint epochs;
-    uint batch_size;
-    std::string optimizer;
-    std::string scheduler;
-    double learning_rate;
-    int verbose;
-    std::string loss;
-    std::string save_path;
+// struct ConfigTrain {
+//     std::string device;
+//     int valid;
+//     uint epochs;
+//     uint batch_size;
+//     std::string optimizer;
+//     std::string scheduler;
+//     double learning_rate;
+//     int verbose;
+//     std::string loss;
+//     std::string save_path;
 
-    // std::string mode;   // For PDE
+//     // std::string mode;   // For PDE
 
-    uint seed;
-    std::string dtype;
-};
+//     uint seed;
+//     std::string dtype;
+// };
 
 std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& config_path) {
     YAML::Node config = YAML::LoadFile(config_path);

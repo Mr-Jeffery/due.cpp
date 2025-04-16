@@ -7,44 +7,41 @@
 #include "nn.hpp"
 
 // Affine class
-class AffineImpl : public NN {
+class Affine : public NN {
 public:
     torch::Tensor vmin, vmax;
     std::string dtype;
     int memory, output_dim, input_dim;
     torch::nn::Linear mDMD{nullptr};
 
-    AffineImpl(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
+    Affine(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
     torch::Tensor forward(torch::Tensor x);
     torch::Tensor predict(torch::Tensor x, int steps, torch::Device device);
 };
-TORCH_MODULE(Affine);
 
 // MLP class
-class MLPImpl : public torch::nn::Module {
+class MLP : public torch::nn::Module {
 public:
     std::string dtype;
     int output_dim, memory, input_dim, depth, width;
     torch::nn::ModuleList layers;
     std::function<torch::Tensor(torch::Tensor)> activation;
 
-    MLPImpl(const ConfigNet& config);
+    MLP(const ConfigNet& config);
     torch::Tensor forward(torch::Tensor x);
 
 private:
     void set_seed(int seed);
 };
-TORCH_MODULE(MLP);
 
 // ResNet class
-class ResNetImpl : public AffineImpl {
+class ResNet : public Affine {
 public:
     MLP mlp;
 
-    ResNetImpl(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
+    ResNet(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
     torch::Tensor forward(torch::Tensor x);
 };
-TORCH_MODULE(ResNet);
 
 // Uncomment and define these classes if needed
 // class GResNetImpl : public AffineImpl { ... };

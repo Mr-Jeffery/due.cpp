@@ -32,7 +32,7 @@ public:
         assert(memory_steps >= 0);
     }
 
-    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> load(const std::string& file_path_train, const std::string& file_path_test = "") {
+    std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> load(const std::string& file_path_train, const std::string& file_path_test = "") {
         int N = 1000;
         int d = this->problem_dim;
         int T = 1001;

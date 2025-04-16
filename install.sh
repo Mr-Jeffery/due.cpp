@@ -30,6 +30,6 @@ cmake -DCMAKE_BUILD_TYPE=Release\
     -DCUDAToolkit_ROOT=/home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw\
     -DTorch_DIR=$PROJECT_DIR/third_party/libtorch/share/cmake/Torch . 
 make -j 16
-./build/env_test
-./build/config_test
+# ./build/env_test
+# ./build/config_test
     # -Dnvtx2_DIR=$PROJECT_DIR/third_party/NVTX/c\

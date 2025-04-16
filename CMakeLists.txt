@@ -45,12 +45,14 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 # Add executable
 add_executable(env_test src/tests/env_test.cpp)
 add_executable(config_test src/tests/config_test.cpp)
+add_executable(example example/DampedPendulum/DampedPendulum.cpp)
 
 
 # Link libraries
 # target_link_libraries(envtest PUBLIC CUDA::cublas)
 target_link_libraries(env_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
 target_link_libraries(config_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+target_link_libraries(example PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
