@@ -1,11 +1,11 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
-
 #include <string>
 #include <tuple>
+#include <fstream>
+#include <sstream>
 #include <torch/torch.h>
-// #include <yaml-cpp/yaml.h>
+#include <yaml-cpp/yaml.h>
 
+#pragma once
 struct ConfigData {
     std::string problem_type;
     uint nbursts;
@@ -49,5 +49,3 @@ struct ConfigTrain {
 
 std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& config_path);
 torch::Tensor read_csv(const std::string& path, const std::string& dtype);
-
-#endif // CONFIG_HPP

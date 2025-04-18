@@ -1,5 +1,3 @@
-#pragma once
-
 #include <torch/torch.h>
 #include <iostream>
 #include <fstream>
@@ -10,8 +8,8 @@
 #include <random>
 
 #include "../utils/config.hpp"
-// #include <matio.h> // For loading .mat files
 
+#pragma once
 class ODEDataset {
 public:
     int problem_dim;
@@ -58,4 +56,20 @@ private:
     }
 
 
+};
+
+class sampleDataLoader : public torch::data::Dataset<sampleDataLoader> {
+public:
+    sampleDataLoader(std::shared_ptr<torch::Tensor> data_, std::shared_ptr<torch::Tensor> target_)
+      : data(data_), target(target_) {}
+
+    torch::data::Example<> get(size_t index) override {
+        return {(*data)[index], (*target)[index]};
+    }
+
+    torch::optional<size_t> size() const override {
+        return data->size(0);
+    }
+private:
+    std::shared_ptr<torch::Tensor> data, target;
 };

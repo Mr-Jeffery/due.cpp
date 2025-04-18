@@ -20,7 +20,7 @@ SET(CMAKE_CACHEFILE_DIR ${dir})
 # Set the CUDA compiler
 # set(CMAKE_CUDA_COMPILER /home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw/bin/nvcc)
 
-project(env_test LANGUAGES CXX CUDA)
+# project(env_test LANGUAGES CXX CUDA)
 set(CMAKE_CUDA_ARCHITECTURES 75 89)
 
 # Find Eigen
@@ -43,19 +43,31 @@ find_package(yaml-cpp REQUIRED)
 include_directories(${YAML_CPP_INCLUDE_DIR})
 
 # Add executable
-add_executable(env_test src/tests/env_test.cpp)
-add_executable(config_test src/tests/config_test.cpp)
+file(GLOB MODEL_SOURCES "src/models/*.cpp")
+file(GLOB NETWORK_SOURCES "src/networks/*.cpp")
+file(GLOB UTILS_SOURCES "src/utils/*.cpp")
+
+set(ALL_SOURCES ${MODEL_SOURCES} ${NETWORK_SOURCES} ${UTILS_SOURCES})
+
+add_library(due SHARED ${ALL_SOURCES})
+target_link_libraries(due PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+
+# add_executable(env_test src/tests/env_test.cpp)
+# add_executable(config_test src/tests/config_test.cpp)
+add_executable(dataloader_test src/tests/dataloader_test.cpp)
+add_executable(train_test src/tests/train_test.cpp)
 add_executable(example example/DampedPendulum/DampedPendulum.cpp)
 
 
 # Link libraries
-# target_link_libraries(envtest PUBLIC CUDA::cublas)
-target_link_libraries(env_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
-target_link_libraries(config_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
-target_link_libraries(example PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+# target_link_libraries(env_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
+# target_link_libraries(config_test PUBLIC due)
+target_link_libraries(dataloader_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+target_link_libraries(train_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
+target_link_libraries(example PUBLIC due)
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    message("OpenMP found")
-    target_link_libraries(env_test PUBLIC OpenMP::OpenMP_CXX)
-endif()
+# find_package(OpenMP)
+# if(OpenMP_CXX_FOUND)
+#     message("OpenMP found")
+#     target_link_libraries(env_test PUBLIC OpenMP::OpenMP_CXX)
+# endif()

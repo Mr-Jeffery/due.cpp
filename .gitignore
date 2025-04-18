@@ -1,5 +1,5 @@
 third_party/
-build/
+build**
 CMakeFiles/
 
 detect_cuda_compute_capabilities.cu

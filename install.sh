@@ -26,6 +26,7 @@ export PROJECT_DIR=/home/jeffery/grad/due.cpp
 
 cmake -DCMAKE_BUILD_TYPE=Release\
     -DCAFFE2_USE_CUDNN=1\
+    -DCMAKE_BUILD_TYPE=Debug\
     -DPYTHON_EXECUTABLE=$(which python)\
     -DCUDAToolkit_ROOT=/home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw\
     -DTorch_DIR=$PROJECT_DIR/third_party/libtorch/share/cmake/Torch . 

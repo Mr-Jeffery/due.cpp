@@ -46,9 +46,9 @@ std::function<torch::Tensor(torch::Tensor)> get_activation(const std::string& na
     else if (name == "softplus" || name == "Softplus")
         return torch::nn::Softplus();
     else if (name == "gelu" || name == "Gelu")
-        // gelu in C++ is available via functional::gelu or a custom module
-        // For example:
-        return torch::nn::Functional(torch::nn::functional::gelu);
+        return [](const torch::Tensor& input) {
+            return torch::nn::functional::gelu(input);
+        };
     else
         throw std::runtime_error("unknown or unsupported activation function: " + name);
 }

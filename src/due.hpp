@@ -1,3 +1,12 @@
+#include <torch/torch.h>
+#include <string>
+#include <stdexcept>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <iostream>
+#include <yaml-cpp/yaml.h>
+
 #include "datasets/ode_parody.hpp"
 #include "models/ode.cpp"
 #include "networks/fcn.hpp"

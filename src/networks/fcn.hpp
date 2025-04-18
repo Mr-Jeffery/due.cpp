@@ -1,14 +1,10 @@
-#ifndef FCN_HPP
-#define FCN_HPP
-
-#include "../utils/utils.h"
 #include "../utils/config.hpp"
 #include "../utils/trainer.hpp"
 #include "nn.hpp"
 
+#pragma once
 // Affine class
-class Affine : public NN {
-public:
+struct Affine : torch::nn::Module {
     torch::Tensor vmin, vmax;
     std::string dtype;
     int memory, output_dim, input_dim;
@@ -20,8 +16,7 @@ public:
 };
 
 // MLP class
-class MLP : public torch::nn::Module {
-public:
+struct MLP : torch::nn::Module {
     std::string dtype;
     int output_dim, memory, input_dim, depth, width;
     torch::nn::ModuleList layers;
@@ -30,27 +25,13 @@ public:
     MLP(const ConfigNet& config);
     torch::Tensor forward(torch::Tensor x);
 
-private:
-    void set_seed(int seed);
+    // void set_seed(unsigned int seed);
 };
 
 // ResNet class
-class ResNet : public Affine {
-public:
-    MLP mlp;
+struct ResNet : Affine {
+    std::shared_ptr<MLP> mlp;
 
     ResNet(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
     torch::Tensor forward(torch::Tensor x);
 };
-
-// Uncomment and define these classes if needed
-// class GResNetImpl : public AffineImpl { ... };
-// TORCH_MODULE(GResNet);
-
-// class OSGNetImpl : public torch::nn::Module { ... };
-// TORCH_MODULE(OSGNet);
-
-// class DualOSGNetImpl : public OSGNetImpl { ... };
-// TORCH_MODULE(DualOSGNet);
-
-#endif // FCN_HPP
