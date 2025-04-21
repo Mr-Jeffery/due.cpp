@@ -11,8 +11,10 @@ struct Affine : torch::nn::Module {
     torch::nn::Linear mDMD{nullptr};
 
     Affine(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
-    torch::Tensor forward(torch::Tensor x);
+    virtual torch::Tensor forward(torch::Tensor x);
     torch::Tensor predict(torch::Tensor x, int steps, torch::Device device);
+
+    virtual ~Affine() = default;
 };
 
 // MLP class
@@ -33,5 +35,5 @@ struct ResNet : Affine {
     std::shared_ptr<MLP> mlp;
 
     ResNet(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config);
-    torch::Tensor forward(torch::Tensor x);
+    torch::Tensor forward(torch::Tensor x) override;
 };

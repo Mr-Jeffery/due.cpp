@@ -33,7 +33,7 @@ struct ConfigNet {
 
 struct ConfigTrain {
     std::string device;
-    int valid;
+    float valid;
     uint epochs;
     uint batch_size;
     std::string optimizer;

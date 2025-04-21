@@ -1,4 +1,6 @@
 #include "fcn.hpp"
+#define Slice torch::indexing::Slice
+#define None torch::indexing::None
 
 Affine::Affine(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config) {
     this->vmin = vmin;
@@ -33,13 +35,13 @@ torch::Tensor Affine::predict(torch::Tensor x, int steps, torch::Device device) 
     xx = xx.to(device);
 
     torch::Tensor yy = torch::zeros({xx.size(0), this->output_dim, steps + this->memory + 1}, torch::TensorOptions().device(device).dtype(xx.dtype()));
-    yy.index_put_({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(0, this->memory + 1)}, xx);
+    yy.index_put_({Slice(), Slice(), Slice(0, this->memory + 1)}, xx);
 
     this->eval();
     torch::NoGradGuard no_grad;
     for (int t = 0; t < steps; ++t) {
-        yy.index_put_({torch::indexing::Slice(), torch::indexing::Slice(), this->memory + 1 + t},
-                        this->forward(yy.index({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(t, this->memory + 1 + t)})
+        yy.index_put_({Slice(), Slice(), this->memory + 1 + t},
+                        this->forward(yy.index({Slice(), Slice(), Slice(t, this->memory + 1 + t)})
                                     .permute({0, 2, 1}).reshape({-1, this->input_dim})));
     }
 
@@ -96,5 +98,5 @@ ResNet::ResNet(torch::Tensor vmin, torch::Tensor vmax, const ConfigNet& config)
 }
 
 torch::Tensor ResNet::forward(torch::Tensor x) {
-    return mlp->forward(x) + x.index({torch::indexing::Slice(), torch::indexing::Slice(-this->output_dim, torch::indexing::None)});
+    return mlp->forward(x.reshape({x.size(0), -1})).unsqueeze(-1) + x.index({Slice(), Slice(), Slice(-1,None)});
 }

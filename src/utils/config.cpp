@@ -26,7 +26,7 @@ std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& co
 
     ConfigTrain confTrain;
     confTrain.device          = config["training"]["device"].as<std::string>();
-    confTrain.valid           = config["training"]["valid"].as<int>();
+    confTrain.valid           = config["training"]["valid"].as<float>();
     confTrain.epochs          = config["training"]["epochs"].as<int>();
     confTrain.batch_size      = config["training"]["batch_size"].as<int>();
     confTrain.optimizer       = config["training"]["optimizer"].as<std::string>();

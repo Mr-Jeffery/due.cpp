@@ -5,84 +5,84 @@ static void ode_debug() {
     std::cout << "ODE debug count: " << count++ << std::endl;
 }
 
-ODE::ODE(at::Tensor *trainX_,
-    at::Tensor *trainY_,
+ODE::ODE(
+    ODEDataset dataset,
     Affine *net_,
     ConfigTrain config
 ) :
-    trainX(trainX_),
-    trainY(trainY_),
-    net(net_),
     nepochs(config.epochs),
     bsize(config.batch_size),
     lr(config.learning_rate),
     do_validation(config.valid > 0),
     valid(config.valid > 0 ? config.valid : 0.f),
     verbose(config.verbose),
-    device(config.device)
+    device(config.device),
+    save_path(config.save_path),
+    train_dataset(std::move(dataset)),
+    net(net_)
 {
-
+    multi_steps = dataset.multi_steps;
+    memory_steps = dataset.memory_steps;
+    problem_dim = dataset.problem_dim;
 
     set_seed(config.seed);
-    *trainX = trainX->to(device);
-    *trainY = trainY->to(device);
-    multi_steps = trainY->size(-1);
-    memory_steps = (trainX->size(1) > trainY->size(1))
-        ? trainX->size(1) / trainY->size(1)
-        : 1;
-
     net->to(device);
 
     optimizer = std::make_unique<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(lr));
-    if (do_validation) {
-        int64_t split_size = static_cast<int64_t>(valid * trainX->size(0));
-        *validX = trainX->slice(0, trainX->size(0) - split_size, trainX->size(0));
-        *validY = trainY->slice(0, trainY->size(0) - split_size, trainY->size(0));
-        *trainX = trainX->slice(0, 0, trainX->size(0) - split_size);
-        *trainY = trainY->slice(0, 0, trainY->size(0) - split_size);
+    // optimizer = get_optimizer(config.optimizer, *net, lr);
 
-        auto valid_loader = std::make_unique<torch::data::StatelessDataLoader<
-            sampleDataLoader,
-            torch::data::samplers::SequentialSampler>>(
-            sampleDataLoader(validX, validY),
-            torch::data::samplers::SequentialSampler(validX->size(0)),
-            torch::data::DataLoaderOptions().batch_size(bsize));
+    if (optimizer == nullptr) {
+        throw std::runtime_error("Optimizer not found");
     }
-    auto train_loader = std::make_unique<torch::data::StatelessDataLoader<
-        sampleDataLoader,
-        torch::data::samplers::RandomSampler>>(
-        sampleDataLoader(trainX, trainY),
-        torch::data::samplers::RandomSampler(trainX->size(0)),
-        torch::data::DataLoaderOptions().batch_size(bsize));
+    // scheduler = std::make_shared<torch::optim::StepLR>(*optimizer, /*step_size=*/10, /*gamma=*/0.1);
 };
 
 void ODE::train() {
+    std::cout << "Training started..." << std::endl;
     summary();
     double minLoss = 1.0e15;
     auto startOverall = std::chrono::steady_clock::now();
     auto start = startOverall;
+
+    if (do_validation) {
+        int64_t total_size = train_dataset.size().value();
+        int64_t split_size = static_cast<int64_t>(valid * total_size);
+        
+
+        auto valid_data = train_dataset.data.index({Slice(total_size - split_size, total_size),Slice(),Slice()});
+        auto valid_targets = train_dataset.targets.index({Slice(total_size - split_size, total_size),Slice(),Slice()});
+        std::cout << "Validation data shape: " << valid_data.sizes() << std::endl;
+        std::cout << "Validation target shape: " << valid_targets.sizes() << std::endl;
+        valid_dataset = ODEDataset(valid_data, valid_targets);
+
+        train_dataset.data = train_dataset.data.index({Slice(0, total_size - split_size),Slice(),Slice()});
+        train_dataset.targets = train_dataset.targets.index({Slice(0, total_size - split_size),Slice(),Slice()});
+    }
+    auto train_loader = torch::data::make_data_loader(train_dataset.map(torch::data::transforms::Stack<>()), bsize);
+    auto new_optimizer = std::make_unique<torch::optim::Adam>(net->parameters(), torch::optim::AdamOptions(lr));
 
     for (int64_t ep = 0; ep < nepochs; ++ep) {
         net->train();
         double trainLoss = 0.0;
         int64_t batchCount = 0;
 
-        for (auto& batch : *train_loader) {
-            auto xx = batch[0].data.to(device);
-            auto yy = batch[1].data.to(device);
-
-            ode_debug();
-
-            optimizer->zero_grad();
+        for (auto it = train_loader->begin(); it != train_loader->end(); ++it) {
+            auto batch = *it;
+            auto xx = batch.data.to(device);
+            auto yy = batch.target.to(device);
             auto pred = torch::zeros_like(yy);
             for (int64_t t = 0; t < multi_steps; ++t) {
                 auto out = net->forward(xx);
-                pred.slice(-1, t, t+1) = out.unsqueeze(-1);
-                xx = torch::cat({xx.slice(-1, net->output_dim, xx.size(-1)), out}, -1);
+                pred.slice(-1, t, t+1) = out;
+                xx = torch::cat({xx.slice(-1, 1, xx.size(-1)), out}, -1);
             }
             auto loss = torch::mse_loss(pred, yy);
-            loss.backward();
-            optimizer->step();
+            optimizer->zero_grad();
+            loss.backward({}, /*retain_graph=*/true);
+        // std::cout << "Loss: " << loss.item<double>() << std::endl;
+            // loss.backward();
+            new_optimizer->step();
+            // scheduler->step();
             trainLoss += loss.item<double>();
             batchCount++;
         }
@@ -92,11 +92,12 @@ void ODE::train() {
             double validLoss = validate();
             if (validLoss < minLoss) {
                 minLoss = validLoss;
+                // torch::save(*net, "best_model.pt");
                 // Save model here if needed
             }
-            if (verbose && (ep + 1) % 10 == 0) {
+            if (verbose && (ep + 1) % verbose == 0) {
                 auto end = std::chrono::steady_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+                auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
                 std::cout << "Epoch " << ep+1 << " --- Time: " << elapsed
                             << "s --- Training loss: " << trainLoss
                             << " --- Validation loss: " << validLoss << "\n";
@@ -105,10 +106,11 @@ void ODE::train() {
         } else {
             if (trainLoss < minLoss) {
                 minLoss = trainLoss;
+                // torch::save(*net, "best_model.pt");
             }
-            if (verbose && (ep + 1) % 10 == 0) {
+            if (verbose && (ep + 1) % verbose == 0) {
                 auto end = std::chrono::steady_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+                auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
                 std::cout << "Epoch " << ep+1 << " --- Time: " << elapsed
                             << "s --- Training loss: " << trainLoss << "\n";
                 start = end;
@@ -118,19 +120,21 @@ void ODE::train() {
 }
 
 double ODE::validate() {
-    net->eval();
-    torch::NoGradGuard no_grad;
+    // net->eval();
+    // torch::NoGradGuard no_grad;
     double totalLoss = 0.0;
     int64_t count = 0;
-    for (auto& batch : *valid_loader) {
-        auto xx = batch[0].data.to(device);
-        auto yy = batch[1].data.to(device);
+    auto valid_loader = torch::data::make_data_loader(valid_dataset.map(torch::data::transforms::Stack<>()), bsize);
+    for (auto it = valid_loader->begin(); it != valid_loader->end(); ++it) {
+        auto batch = *it;
+        auto xx = batch.data.to(device);
+        auto yy = batch.target.to(device);
 
         auto pred = torch::zeros_like(yy);
         for (int64_t t = 0; t < multi_steps; ++t) {
             auto out = net->forward(xx);
             pred.slice(-1, t, t+1) = out;
-            xx = torch::cat({xx.slice(-1, net->output_dim, xx.size(-1)), out}, -1);
+            xx = torch::cat({xx.slice(-1, 1, xx.size(-1)), out}, -1);
         }
         auto loss = torch::mse_loss(pred, yy);
         totalLoss += loss.item<double>();
@@ -140,10 +144,9 @@ double ODE::validate() {
 }
 
 void ODE::summary() {
-    std::cout << "Number of trainable parameters: "
-                << count_params(*net)     << "\n";
-    std::cout << "Number of epochs: " << nepochs  << "\n";
-    std::cout << "Batch size: "      << bsize    << "\n";
+    std::cout << "Number of trainable parameters: " << count_params(*this->net) << std::endl;
+    std::cout << "Number of epochs: " << nepochs << std::endl;
+    std::cout << "Batch size: "      << bsize << std::endl;
 }
 
 void ODE::set_seed(unsigned int seed) {

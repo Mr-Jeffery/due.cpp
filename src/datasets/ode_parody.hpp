@@ -10,7 +10,7 @@
 #include "../utils/config.hpp"
 
 #pragma once
-class ODEDataset {
+class ODEDataset : public torch::data::Dataset<ODEDataset> {
 public:
     int problem_dim;
     int memory_steps;

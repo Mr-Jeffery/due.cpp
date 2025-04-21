@@ -5,36 +5,29 @@
 #include <cmath>
 #include <chrono>
 #include "../utils/utils.hpp"
-#include "../datasets/ode_parody.hpp"
+#include "../datasets/ode.cpp"
 #include "../networks/fcn.hpp"
 
-
-
-
 class ODE {
-private:
-    std::shared_ptr<torch::Tensor> trainX, trainY, validX, validY;
-    std::shared_ptr<Affine> net;
+public:
+    ODEDataset train_dataset, valid_dataset;
+    Affine *net;
     int64_t multi_steps;
     int64_t memory_steps;
+    int64_t problem_dim;
     int64_t nepochs;
     int64_t bsize;
     double lr;
     bool do_validation;
     float valid;
-    bool verbose;
+    int verbose;
     torch::Device device;
+    std::string save_path;
     std::unique_ptr<torch::optim::Optimizer> optimizer;
-    std::unique_ptr<torch::data::StatelessDataLoader<
-        torch::data::datasets::TensorDataset,
-        torch::data::samplers::RandomSampler>> train_loader;
-    std::unique_ptr<torch::data::StatelessDataLoader<
-        torch::data::datasets::TensorDataset,
-        torch::data::samplers::SequentialSampler>> valid_loader;
+    std::shared_ptr<torch::optim::StepLR> scheduler;
 
-public:
-    ODE(at::Tensor *trainX_,
-        at::Tensor *trainY_,
+    ODE(
+        ODEDataset dataset,
         Affine *net_,
         ConfigTrain config
     );

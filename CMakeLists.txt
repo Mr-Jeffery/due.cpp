@@ -46,25 +46,23 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 file(GLOB MODEL_SOURCES "src/models/*.cpp")
 file(GLOB NETWORK_SOURCES "src/networks/*.cpp")
 file(GLOB UTILS_SOURCES "src/utils/*.cpp")
+file(GLOB TEST_SOURCES "src/tests/*.cpp")
 
-set(ALL_SOURCES ${MODEL_SOURCES} ${NETWORK_SOURCES} ${UTILS_SOURCES})
+set(DUE_SOURCES ${MODEL_SOURCES} ${NETWORK_SOURCES} ${UTILS_SOURCES})
 
-add_library(due SHARED ${ALL_SOURCES})
+add_library(due SHARED ${DUE_SOURCES})
 target_link_libraries(due PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
 
-# add_executable(env_test src/tests/env_test.cpp)
-# add_executable(config_test src/tests/config_test.cpp)
-add_executable(dataloader_test src/tests/dataloader_test.cpp)
-add_executable(train_test src/tests/train_test.cpp)
 add_executable(example example/DampedPendulum/DampedPendulum.cpp)
 
-
-# Link libraries
-# target_link_libraries(env_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
-# target_link_libraries(config_test PUBLIC due)
-target_link_libraries(dataloader_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
-target_link_libraries(train_test PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
 target_link_libraries(example PUBLIC due)
+
+foreach(file ${TEST_SOURCES})
+    get_filename_component(name ${file} NAME_WE)
+    add_executable(${name} ${file})
+    # Link libraries
+    target_link_libraries(${name} PUBLIC due)
+endforeach()
 
 # find_package(OpenMP)
 # if(OpenMP_CXX_FOUND)
