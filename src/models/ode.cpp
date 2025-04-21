@@ -68,8 +68,8 @@ void ODE::train() {
 
         for (auto it = train_loader->begin(); it != train_loader->end(); ++it) {
             auto batch = *it;
-            auto xx = batch.data.to(device);
-            auto yy = batch.target.to(device);
+            auto xx = batch.data.to(device).detach();
+            auto yy = batch.target.to(device).detach();
             auto pred = torch::zeros_like(yy);
             for (int64_t t = 0; t < multi_steps; ++t) {
                 auto out = net->forward(xx);
@@ -78,9 +78,7 @@ void ODE::train() {
             }
             auto loss = torch::mse_loss(pred, yy);
             optimizer->zero_grad();
-            loss.backward({}, /*retain_graph=*/true);
-        // std::cout << "Loss: " << loss.item<double>() << std::endl;
-            // loss.backward();
+            loss.backward();
             new_optimizer->step();
             // scheduler->step();
             trainLoss += loss.item<double>();

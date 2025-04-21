@@ -20,8 +20,8 @@ int main(){
 for (int64_t ep = 0; ep < confTrain.epochs; ++ep) {
     for (auto it = data_loader->begin(); it != data_loader->end(); ++it) {
         auto batch = *it;
-        auto xx = batch.data.to(device);
-        auto yy = batch.target.to(device);
+        auto xx = batch.data.to(device).detach();
+        auto yy = batch.target.to(device).detach();
         auto pred = torch::zeros_like(yy).to(device);
 
         for (int64_t t = 0; t < multi_steps; ++t) {
@@ -31,13 +31,10 @@ for (int64_t ep = 0; ep < confTrain.epochs; ++ep) {
         }
         auto loss = torch::mse_loss(pred, yy);
         optimizer->zero_grad();
-        // loss.backward();
-        loss.backward({}, /*retain_graph=*/true);
+        loss.backward();
         std::cout << "Loss: " << loss.item<double>() << std::endl;
         optimizer->step();
     }
-    // goto exit;
 }
-exit:
     std::cout << "Total parameters: " << count_params(mynet) << std::endl;
 }
