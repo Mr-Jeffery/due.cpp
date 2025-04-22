@@ -26,8 +26,8 @@ public:
         : data(std::move(_data)), targets(std::move(_targets)) 
     {
         problem_dim = data.size(1);
-        memory_steps = data.size(2) - multi_steps - 1;
-        multi_steps = targets.size(1);
+        multi_steps = targets.size(2);
+        memory_steps = data.size(2) - 1;
     }
 
     torch::optional<size_t> size() const override {
@@ -91,7 +91,7 @@ public:
         uint T = raw_data.size(2);
 
         assert(d == this->problem_dim && "Only support data arrays with size (N,d,T), N being number of trajectories, d being the number of state variables, T being the number of time instances.");
-        assert(T > this->memory_steps + this->multi_steps + 2 && "T must be greater than memory_steps + multi_steps + 2 .");
+        assert(T > this->memory_steps + this->multi_steps + 1 && "T must be greater than memory_steps + multi_steps + 1 .");
 
         printf("Dataset loaded with %d trajectories, %d variables, and %d time instances.\n", N, d, T);
 
@@ -99,7 +99,7 @@ public:
         raw_data = normalize_(raw_data);
 
         uint max_bursts = T - multi_steps - memory_steps - 1;
-        int burst_len = memory_steps + multi_steps + 2;
+        int burst_len = memory_steps + multi_steps + 1;
 
         nbursts = std::min(nbursts, max_bursts);
 

@@ -73,6 +73,7 @@ void ODE::train() {
             auto pred = torch::zeros_like(yy);
             for (int64_t t = 0; t < multi_steps; ++t) {
                 auto out = net->forward(xx);
+                // std::cout << "slice1: \n" << xx.index({Slice(), Slice(), Slice(1,memory_steps+1)}) << std::endl;
                 pred.slice(-1, t, t+1) = out;
                 xx = torch::cat({xx.slice(-1, 1, xx.size(-1)), out}, -1);
             }
