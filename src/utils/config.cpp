@@ -1,4 +1,4 @@
-#include "config.hpp"
+#include <due/utils/config.hpp>
 
 std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& config_path) {
     YAML::Node config = YAML::LoadFile(config_path);

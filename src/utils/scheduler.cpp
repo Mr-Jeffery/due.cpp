@@ -1,15 +1,29 @@
-#include "scheduler.hpp"
+#include <due/utils/scheduler.hpp>
+// #pragma once
+namespace torch {
+namespace optim {
+CosineAnnealingLR::CosineAnnealingLR(
+    torch::optim::Optimizer& optimizer,
+    const unsigned initial_lr,
+    const double eta_min,
+    const int last_step
+) :
+    LRScheduler(optimizer),
+    initial_lr_(initial_lr),
+    eta_min_(eta_min),
+    last_step_(last_step)
+{}
 
-CosineAnnealingLR::CosineAnnealingLR(double initial_lr, int T_max)
-    : initial_lr(initial_lr), T_max(T_max), T_cur(0) {}
-
-double CosineAnnealingLR::get_lr() {
-    return initial_lr * (1 + std::cos(M_PI * T_cur / T_max)) / 2;
-}
-
-void CosineAnnealingLR::step() {
-    T_cur++;
-    if (T_cur > T_max) {
-        T_cur = 0;
+std::vector<double> CosineAnnealingLR::get_lrs() {
+    if(last_step_ == -1)
+        return get_current_lrs();
+    else {
+        std::vector<double> lrs = get_current_lrs();
+        std::transform(lrs.begin(), lrs.end(), lrs.begin(),
+                    [this](const double& v){ return initial_lr_ * (1 + std::cos(M_PI * v / last_step_)) / 2; });
+        return lrs;
     }
 }
+
+} // namespace optim
+} // namespace torch

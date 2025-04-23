@@ -1,8 +1,7 @@
 #include <torch/torch.h>
 #include <iostream>
-#include "../utils/utils.hpp"
-#include "../utils/config.cpp"
-#include "../datasets/ode.cpp"
+#include <due/utils/utils.hpp>
+#include <due/datasets/ode.hpp>
 
 
 int main() {

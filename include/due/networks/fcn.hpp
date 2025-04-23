@@ -1,6 +1,6 @@
-#include "../utils/config.hpp"
-#include "../utils/trainer.hpp"
-#include "nn.hpp"
+#include <due/utils/config.hpp>
+#include <due/utils/trainer.hpp>
+#include <due/networks/nn.hpp>
 
 #pragma once
 // Affine class

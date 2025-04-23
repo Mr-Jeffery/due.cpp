@@ -1,5 +1,4 @@
-#include "../utils/utils.hpp"
-#include "../utils/config.cpp"
+#include <due/utils/config.hpp>
 
 int main(){
     std::string config_path = "config.yaml";

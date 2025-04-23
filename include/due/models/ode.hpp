@@ -4,9 +4,9 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
-#include "../utils/utils.hpp"
-#include "../datasets/ode.cpp"
-#include "../networks/fcn.hpp"
+#include <due/utils/utils.hpp>
+#include <due/datasets/ode.hpp>
+#include <due/networks/fcn.hpp>
 
 class ODE {
 public:

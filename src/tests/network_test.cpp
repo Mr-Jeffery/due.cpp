@@ -1,7 +1,6 @@
 #include <torch/torch.h>
 #include <iostream>
-#include "../utils/utils.hpp"
-#include "../utils/config.cpp"
+#include <due/utils/utils.hpp>
 
 struct MLP : torch::nn::Module {
     int output_dim = 2, 

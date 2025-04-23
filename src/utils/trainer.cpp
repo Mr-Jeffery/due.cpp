@@ -1,5 +1,5 @@
-#include "scheduler.hpp"
-#include "trainer.hpp"
+#include <due/utils/scheduler.hpp>
+#include <due/utils/trainer.hpp>
 
 // // Equivalent of rel_l1_norm(true, pred)
 // torch::Tensor rel_l1_norm(const torch::Tensor& truth, const torch::Tensor& pred) {

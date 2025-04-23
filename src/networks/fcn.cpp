@@ -1,4 +1,4 @@
-#include "fcn.hpp"
+#include <due/networks/fcn.hpp>
 #define Slice torch::indexing::Slice
 #define None torch::indexing::None
 

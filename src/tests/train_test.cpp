@@ -1,4 +1,4 @@
-#include "../due.hpp"
+#include <due/due.hpp>
 #define Slice torch::indexing::Slice
 #define None torch::indexing::None
 

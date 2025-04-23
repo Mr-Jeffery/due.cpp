@@ -1,4 +1,6 @@
-#include "ode.hpp"
+#include <due/models/ode.hpp>
+#define Slice torch::indexing::Slice
+#define None torch::indexing::None
 
 static void ode_debug() {
     static int count = 0;

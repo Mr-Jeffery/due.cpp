@@ -46,6 +46,5 @@ struct ConfigTrain {
     uint seed;
     std::string dtype;
 };
-
 std::tuple<ConfigData, ConfigNet, ConfigTrain> read_config(const std::string& config_path);
 torch::Tensor read_csv(const std::string& path, const std::string& dtype);

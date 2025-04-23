@@ -1,4 +1,4 @@
-#include "nn.hpp"
+#include <due/networks/nn.hpp>
 
 void set_seed(unsigned int seed) {
     setenv("PYTHONHASHSEED", std::to_string(seed).c_str(), 1);

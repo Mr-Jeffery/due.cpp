@@ -7,8 +7,8 @@
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
-#include "datasets/ode.cpp"
-#include "models/ode.cpp"
-#include "networks/fcn.hpp"
-#include "networks/nn.hpp"
-#include "utils/utils.hpp"
+#include <due/datasets/ode.hpp>
+#include <due/models/ode.hpp>
+#include <due/networks/fcn.hpp>
+#include <due/networks/nn.hpp>
+#include <due/utils/utils.hpp>
