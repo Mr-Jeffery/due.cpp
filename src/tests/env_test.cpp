@@ -1,16 +1,16 @@
-#include <Eigen/Dense>
+// #include <Eigen/Dense>
 #include <cublas_v2.h>
 #include <iostream>
 #include <torch/torch.h>
 
 int main() {
     // Test Eigen
-    Eigen::Matrix3d mat;
-    mat << 1, 2, 3,
-           4, 5, 6,
-           7, 8, 9;
+    // Eigen::Matrix3d mat;
+    // mat << 1, 2, 3,
+    //        4, 5, 6,
+    //        7, 8, 9;
 
-    std::cout << "Eigen Matrix:\n" << mat << std::endl;
+    // std::cout << "Eigen Matrix:\n" << mat << std::endl;
 
     // Test CUDA cuBLAS
     cublasHandle_t handle;

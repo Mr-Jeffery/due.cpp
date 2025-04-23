@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
+project(due LANGUAGES CXX CUDA)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+# set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -mavx2")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -mfma")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -O3")
@@ -14,18 +15,14 @@ set(CMAKE_BUILD_FILES_DIRECTORY ${dir})
 set(CMAKE_BUILD_DIRECTORY ${dir})
 set(CMAKE_BINARY_DIR  ${dir})
 SET(EXECUTABLE_OUTPUT_PATH ${dir})
-SET(LIBRARY_OUTPUT_PATH ${dir}lib)
+SET(LIBRARY_OUTPUT_PATH ${dir}/lib)
 SET(CMAKE_CACHEFILE_DIR ${dir})
-# set(Python_EXECUTABLE /home/jeffery/miniconda3/bin/python)
-# Set the CUDA compiler
-# set(CMAKE_CUDA_COMPILER /home/jeffery/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.4.0/cuda-11.8.0-njuq5zswd2ene635o4nk2rhwrq3pv3gw/bin/nvcc)
 
-# project(env_test LANGUAGES CXX CUDA)
 set(CMAKE_CUDA_ARCHITECTURES 75 89)
 
 # Find Eigen
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-include_directories(${EIGEN3_INCLUDE_DIR})
+# find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+# include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Find CUDA
 find_package(CUDAToolkit)
@@ -33,6 +30,7 @@ include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
 # find_package(nvtx3 REQUIRED)
 # include_directories(${nvtx3_INCLUDE_DIRS})
+include_directories(${dir}/third_party/NVTX/c/include)
 
 # Find Torch
 find_package(Torch REQUIRED)
@@ -54,8 +52,10 @@ add_library(due SHARED ${DUE_SOURCES})
 target_link_libraries(due PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
 
 add_executable(example example/DampedPendulum/DampedPendulum.cpp)
+add_executable(dynamic example/DampedPendulum/DampedPendulum_backup.cpp)
 
 target_link_libraries(example PUBLIC due)
+target_link_libraries(dynamic  PUBLIC due)
 
 foreach(file ${TEST_SOURCES})
     get_filename_component(name ${file} NAME_WE)
