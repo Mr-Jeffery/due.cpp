@@ -10,8 +10,8 @@ ODEDataset::ODEDataset(torch::Tensor _data, torch::Tensor _targets)
     : data(std::move(_data)), targets(std::move(_targets)) 
 {
     problem_dim = data.size(1);
-    memory_steps = data.size(2) - multi_steps - 1;
-    multi_steps = targets.size(1);
+    multi_steps = targets.size(2);
+    memory_steps = data.size(2) - 1;
 }
 
 torch::optional<size_t> ODEDataset::size() const {

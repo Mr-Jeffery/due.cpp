@@ -1,4 +1,5 @@
-#include "../../src/due.hpp"
+#include <due/due.hpp>
+
 
 // ConfigData conf_data;
 // ConfigNet conf_net;

@@ -30,7 +30,7 @@ include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
 # find_package(nvtx3 REQUIRED)
 # include_directories(${nvtx3_INCLUDE_DIRS})
-include_directories(${dir}/third_party/NVTX/c/include)
+# include_directories(${dir}/third_party/NVTX/c/include)
 
 # Find Torch
 find_package(Torch REQUIRED)
@@ -40,22 +40,26 @@ include_directories(${TORCH_INCLUDE_DIRS})
 find_package(yaml-cpp REQUIRED)
 include_directories(${YAML_CPP_INCLUDE_DIR})
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
 # Add executable
+file(GLOB DATASET_SOURCES "src/datasets/*.cpp")
 file(GLOB MODEL_SOURCES "src/models/*.cpp")
 file(GLOB NETWORK_SOURCES "src/networks/*.cpp")
 file(GLOB UTILS_SOURCES "src/utils/*.cpp")
 file(GLOB TEST_SOURCES "src/tests/*.cpp")
 
-set(DUE_SOURCES ${MODEL_SOURCES} ${NETWORK_SOURCES} ${UTILS_SOURCES})
+set(DUE_SOURCES ${DATASET_SOURCES} ${MODEL_SOURCES} ${NETWORK_SOURCES} ${UTILS_SOURCES})
 
 add_library(due SHARED ${DUE_SOURCES})
 target_link_libraries(due PUBLIC CUDA::cublas ${TORCH_LIBRARIES} yaml-cpp)
 
-add_executable(example example/DampedPendulum/DampedPendulum.cpp)
-add_executable(dynamic example/DampedPendulum/DampedPendulum_backup.cpp)
+add_executable(static_example example/DampedPendulum/DampedPendulum_static.cpp)
+add_executable(dynamic_example example/DampedPendulum/DampedPendulum_dynamic.cpp)
 
-target_link_libraries(example PUBLIC due)
-target_link_libraries(dynamic  PUBLIC due)
+target_link_libraries(static_example PUBLIC CUDA::cublas ${TORCH_LIBRARIES})
+target_link_libraries(dynamic_example  PUBLIC due)
 
 foreach(file ${TEST_SOURCES})
     get_filename_component(name ${file} NAME_WE)

@@ -1,12 +1,10 @@
-#include "../../src/due.hpp"
+#include "../../src/due.cpp"
+#define Slice torch::indexing::Slice
+#define None torch::indexing::None
 
-// ConfigData conf_data;
-// ConfigNet conf_net;
-// ConfigTrain conf_train;
 int main(){
     torch::Device device(torch::kCUDA); 
     // Load the configuration for the modules: datasets, networks, and models
-    // auto [conf_data, conf_net, conf_train] = read_config("config.yaml");
     auto conf_data = ConfigData();
     auto conf_net = ConfigNet();
     auto conf_train = ConfigTrain();
@@ -25,7 +23,7 @@ int main(){
     conf_net.activation = "relu";
 
     conf_train.epochs = 500;
-    conf_train.batch_size = 512;
+    conf_train.batch_size = 2048;
     conf_train.learning_rate = 0.001;
     conf_train.valid = 0;
     conf_train.verbose = 10;
